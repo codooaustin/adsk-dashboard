@@ -1,0 +1,106 @@
+@import "tailwindcss";
+
+/* Artifakt Fonts - Autodesk Brand Typography */
+/* https://brand.autodesk.com/visual-system/typography */
+@font-face {
+  font-family: 'Artifakt Legend';
+  src: url('/fonts/Artifakt Legend Bold.woff2') format('woff2'),
+       url('/fonts/Artifakt Legend Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Artifakt Element';
+  src: url('/fonts/Artifakt Element Bold.woff2') format('woff2'),
+       url('/fonts/Artifakt Element Bold.woff') format('woff'),
+       url('/fonts/Artifakt Element Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Artifakt Element';
+  src: url('/fonts/Artifakt Element Regular.woff2') format('woff2'),
+       url('/fonts/Artifakt Element Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Autodesk Brand Colors - Official from https://brand.autodesk.com/visual-system/color/ */
+:root {
+  /* Primary Brand Colors */
+  --autodesk-black: #000000;
+  --autodesk-white: #ffffff;
+  --hello-yellow: #ffff00;
+  
+  /* Secondary Colors */
+  --warm-slate: #d5d5cb;
+  --slate: #666666;
+  
+  /* Default theme - Autodesk Black background */
+  --background: var(--autodesk-black);
+  --foreground: var(--autodesk-white);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-autodesk-black: var(--autodesk-black);
+  --color-autodesk-white: var(--autodesk-white);
+  --color-hello-yellow: var(--hello-yellow);
+  --color-warm-slate: var(--warm-slate);
+  --color-slate: var(--slate);
+  --font-heading: 'Artifakt Legend', Arial, sans-serif;
+  --font-body: 'Artifakt Element', Arial, sans-serif;
+  --font-subheading: 'Artifakt Element', Arial, sans-serif;
+}
+
+/* Tailwind v4 custom color utilities */
+@layer utilities {
+  .text-hello-yellow {
+    color: var(--hello-yellow);
+  }
+  .bg-hello-yellow {
+    background-color: var(--hello-yellow);
+  }
+  .border-hello-yellow {
+    border-color: var(--hello-yellow);
+  }
+  .hover\:text-hello-yellow:hover {
+    color: var(--hello-yellow);
+  }
+  .hover\:bg-hello-yellow:hover {
+    background-color: var(--hello-yellow);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
+
+/* Typography hierarchy following Autodesk 4px grid system */
+h1, h2 {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+h3, h4 {
+  font-family: var(--font-subheading);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Ensure line heights are divisible by 4px for grid alignment */
+h1 { font-size: 2.5rem; line-height: 3rem; } /* 40px / 48px */
+h2 { font-size: 2rem; line-height: 2.5rem; } /* 32px / 40px */
+h3 { font-size: 1.5rem; line-height: 2rem; } /* 24px / 32px */
+h4 { font-size: 1.25rem; line-height: 1.75rem; } /* 20px / 28px */
+p, body { font-size: 1rem; line-height: 1.5rem; } /* 16px / 24px */
