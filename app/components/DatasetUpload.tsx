@@ -67,8 +67,7 @@ export default function DatasetUpload({ accountSlug, onUploadComplete }: Dataset
       const supabase = createClient()
       const { error: uploadErr } = await supabase.storage
         .from('datasets')
-        .uploadToSignedUrl(path, file, {
-          token,
+        .uploadToSignedUrl(path, token, file, {
           contentType: file.type || 'application/octet-stream',
         })
 
