@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface DatasetUploadProps {
   accountSlug: string
@@ -41,35 +42,62 @@ export default function DatasetUpload({ accountSlug, onUploadComplete }: Dataset
     setUploadProgress(0)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      // Simulate progress (since fetch doesn't support upload progress natively)
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => Math.min(prev + 10, 90))
-      }, 200)
-
-      const response = await fetch(`/api/accounts/${accountSlug}/datasets/upload`, {
+      // Step 1: Get signed upload URL (no file in request – avoids Vercel 4.5MB limit)
+      const urlRes = await fetch(`/api/accounts/${accountSlug}/datasets/upload`, {
         method: 'POST',
-        body: formData,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filename: file.name,
+          size: file.size,
+          contentType: file.type || undefined,
+        }),
       })
-
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to upload file')
+      if (!urlRes.ok) {
+        const err = await urlRes.json()
+        throw new Error(err.error || 'Failed to get upload URL')
+      }
+      const { uploadUrl, path, token, storagePath } = await urlRes.json()
+      if (!uploadUrl || !path || !token || !storagePath) {
+        throw new Error('Invalid upload URL response')
       }
 
-      const dataset = await response.json()
-      
-      // Reset form
+      setUploadProgress(20)
+
+      // Step 2: Upload file directly to Supabase Storage (bypasses Vercel body limit)
+      const supabase = createClient()
+      const { error: uploadErr } = await supabase.storage
+        .from('datasets')
+        .uploadToSignedUrl(path, file, {
+          token,
+          contentType: file.type || 'application/octet-stream',
+        })
+
+      if (uploadErr) {
+        console.error('Storage upload error:', uploadErr)
+        throw new Error(uploadErr.message || 'Failed to upload file to storage')
+      }
+
+      setUploadProgress(70)
+
+      // Step 3: Finalize – create dataset record (type detection runs server-side)
+      const finalizeRes = await fetch(`/api/accounts/${accountSlug}/datasets/upload/finalize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          storagePath,
+          originalFilename: file.name,
+        }),
+      })
+      if (!finalizeRes.ok) {
+        const err = await finalizeRes.json()
+        throw new Error(err.error || 'Failed to create dataset record')
+      }
+
+      setUploadProgress(100)
+
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
-      
-      // Refresh the page to show new dataset
       if (onUploadComplete) {
         onUploadComplete()
       } else {
