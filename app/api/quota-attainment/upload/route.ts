@@ -36,10 +36,12 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate file size
+    // Validate file size (Supabase free tier allows up to 50MB; Pro required for larger)
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `File too large. Maximum size: ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        {
+          error: `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB. Larger files require Supabase Pro.`,
+        },
         { status: 400 }
       )
     }

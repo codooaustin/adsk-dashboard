@@ -30,7 +30,7 @@ export default function QuotaAttainmentUploadPage() {
     }
 
     if (file.size > 50 * 1024 * 1024) {
-      setError('File too large. Maximum size: 50MB')
+      setError('File too large. Maximum size is 50MB. Larger files require Supabase Pro.')
       return
     }
 
