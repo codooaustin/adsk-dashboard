@@ -34,21 +34,21 @@ export default function ChartContainer({ title, children, isPresentationMode = f
     : 'text-xl font-bold text-white mb-4'
 
   return (
-    <div className={containerClasses}>
-      <div className="flex justify-between items-center mb-4">
+    <div className={`${containerClasses} relative`}>
+      <div ref={chartRef}>
         <h2 className={`${titleClasses} flex items-center gap-2`}>{title}</h2>
-        {!isPresentationMode && (
-          <button
-            onClick={handleCopy}
-            className="px-4 py-2 bg-hello-yellow text-black font-medium rounded hover:bg-hello-yellow/90 transition-colors text-sm"
-          >
-            Copy to Clipboard
-          </button>
-        )}
+        <div className="w-full">
+          {children}
+        </div>
       </div>
-      <div ref={chartRef} className="w-full">
-        {children}
-      </div>
+      {!isPresentationMode && (
+        <button
+          onClick={handleCopy}
+          className="absolute top-6 right-6 px-4 py-2 bg-hello-yellow text-black font-medium rounded hover:bg-hello-yellow/90 transition-colors text-sm"
+        >
+          Copy to Clipboard
+        </button>
+      )}
     </div>
   )
 }

@@ -85,6 +85,23 @@ body {
   line-height: 1.5;
 }
 
+/* Scrollbar – track matches light blue/off-white site background */
+* {
+  scrollbar-color: #94a3b8 #E8EDF1;
+  scrollbar-width: thin;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: #E8EDF1;
+}
+*::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 5px;
+}
+
 /* Typography hierarchy following Autodesk 4px grid system */
 h1, h2 {
   font-family: var(--font-heading);
