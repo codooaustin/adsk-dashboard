@@ -244,8 +244,10 @@ export async function normalizeRawDataset(
       .insert(batch)
 
     if (insertError) {
+      const rawMsg = insertError.message ?? String(insertError)
+      const safeMessage = typeof rawMsg === 'string' && (rawMsg.includes('<!DOCTYPE') || rawMsg.includes('<html')) ? `Supabase returned an error (500) at batch ${batchNumber}/${totalBatches}. Try again later.` : rawMsg
       throw new DatabaseError(
-        `Failed to insert batch ${batchNumber}/${totalBatches}: ${insertError.message}`
+        `Failed to insert batch ${batchNumber}/${totalBatches}: ${safeMessage}`
       )
     }
 

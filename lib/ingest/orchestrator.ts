@@ -20,7 +20,8 @@ export interface IngestionResult {
   error?: string
 }
 
-const BATCH_SIZE = 1000
+// Keep batches small to avoid Supabase/Cloudflare 500 (payload size or timeout)
+const BATCH_SIZE = 500
 
 /**
  * Get raw table name for dataset type
@@ -208,9 +209,16 @@ export async function ingestDataset(
         .insert(batch)
 
       if (insertError) {
+        // #region agent log
+        const payloadBytes = JSON.stringify(batch).length
+        const isHtml = typeof insertError.message === 'string' && (insertError.message.includes('<!DOCTYPE') || insertError.message.includes('<html'))
+        fetch('http://127.0.0.1:7245/ingest/3c35bd42-4cbb-409d-8e6d-f95a48a29e55',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'orchestrator.ts:insertError',message:'batch insert failed',data:{batchNumber,totalBatches,batchLen:batch.length,payloadBytes,isHtml,messageLen:insertError?.message?.length,code:insertError?.code},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1-H5'})}).catch(()=>{});
+        // #endregion
         console.error(`Failed to insert batch ${batchNumber}/${totalBatches}:`, insertError)
+        const rawMsg = insertError.message ?? String(insertError)
+        const safeMessage = typeof rawMsg === 'string' && (rawMsg.includes('<!DOCTYPE') || rawMsg.includes('<html')) ? `Supabase returned an error (500) at batch ${batchNumber}/${totalBatches}. Try a smaller file or try again later.` : rawMsg
         throw new DatabaseError(
-          `Failed to insert batch ${batchNumber}/${totalBatches}: ${insertError.message}`
+          `Failed to insert batch ${batchNumber}/${totalBatches}: ${safeMessage}`
         )
       }
 
