@@ -1,14 +1,14 @@
 'use client'
 
-import { useRef } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { ChartDataPoint } from '@/lib/dashboard/chartData'
-import { format } from 'date-fns'
+import { ChartDataPoint, TimeGranularity } from '@/lib/dashboard/chartData'
+import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
 
 interface StackedBarChartProps {
   data: ChartDataPoint[]
   productColors: Map<string, string>
   productDisplayNames?: Map<string, string>
+  granularity?: TimeGranularity
   isPresentationMode?: boolean
   tooltipFormatter?: (value: unknown, name: string) => [string, string]
 }
@@ -22,6 +22,7 @@ export default function StackedBarChart({
   data,
   productColors,
   productDisplayNames,
+  granularity,
   isPresentationMode = false,
   tooltipFormatter,
 }: StackedBarChartProps) {
@@ -33,64 +34,7 @@ export default function StackedBarChart({
     })
   })
   const sortedProducts = Array.from(productKeys).sort()
-
-  // #region agent log
-  const loggedDates = useRef<Set<string>>(new Set())
-  const tzLogged = useRef(false)
-  // #endregion
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const d = new Date(dateStr)
-      const formatted = format(d, 'MMM d, yyyy')
-      // #region agent log
-      if (!tzLogged.current) {
-        tzLogged.current = true
-        fetch('http://127.0.0.1:7245/ingest/3c35bd42-4cbb-409d-8e6d-f95a48a29e55', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            location: 'StackedBarChart.tsx:formatDate',
-            message: 'timezone and format context',
-            data: {
-              timezoneOffsetMinutes: d.getTimezoneOffset(),
-              iso: d.toISOString(),
-              resolvedTZ: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : 'n/a',
-            },
-            timestamp: Date.now(),
-            sessionId: 'debug-session',
-            hypothesisId: 'H1',
-          }),
-        }).catch(() => {})
-      }
-      if (loggedDates.current.size < 5 && !loggedDates.current.has(dateStr)) {
-        loggedDates.current.add(dateStr)
-        fetch('http://127.0.0.1:7245/ingest/3c35bd42-4cbb-409d-8e6d-f95a48a29e55', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            location: 'StackedBarChart.tsx:formatDate',
-            message: 'formatDate in/out',
-            data: {
-              dateStr,
-              iso: d.toISOString(),
-              localDay: d.getDate(),
-              localMonth: d.getMonth() + 1,
-              localYear: d.getFullYear(),
-              formatted,
-            },
-            timestamp: Date.now(),
-            sessionId: 'debug-session',
-            hypothesisId: 'H1',
-          }),
-        }).catch(() => {})
-      }
-      // #endregion
-      return formatted
-    } catch {
-      return dateStr
-    }
-  }
+  const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
   if (sortedProducts.length === 0 || data.length === 0) {
     return (

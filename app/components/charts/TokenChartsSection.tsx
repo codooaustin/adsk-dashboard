@@ -241,6 +241,7 @@ export default function TokenChartsSection({
               data={chartData}
               productColors={chartColors}
               productDisplayNames={chartDisplayNames}
+              granularity={granularity}
               isPresentationMode={isPresentationMode}
             />
           </ChartContainer>
@@ -249,6 +250,7 @@ export default function TokenChartsSection({
               data={chartData}
               productColors={chartColors}
               productDisplayNames={chartDisplayNames}
+              granularity={granularity}
               isPresentationMode={isPresentationMode}
             />
           </ChartContainer>

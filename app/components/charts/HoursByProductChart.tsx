@@ -293,6 +293,7 @@ export default function HoursByProductChart({
         data={chartData}
         productColors={chartColors}
         productDisplayNames={chartDisplayNames}
+        granularity={granularity}
         isPresentationMode={isPresentationMode}
         tooltipFormatter={(value, name) => [
           typeof value === 'number' ? value.toFixed(2) : String(value ?? ''),

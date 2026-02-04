@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { ChartDataPoint } from '@/lib/dashboard/chartData'
 import { TimeGranularity } from '@/lib/dashboard/chartData'
-import { format } from 'date-fns'
+import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
 import { createClient } from '@/lib/supabase/client'
 import { getAvailableProductsForEvents, getDateRangeForEvents } from '@/lib/dashboard/rawChartData'
 import { aggregateChartDataByTag } from '@/lib/dashboard/productDisplay'
@@ -236,14 +236,7 @@ export default function EventsOverTimeChart({
     '#84CC16', // lime
   ]
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr)
-      return format(date, 'MMM d, yyyy')
-    } catch {
-      return dateStr
-    }
-  }
+  const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
   if (loading) {
     return (

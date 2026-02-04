@@ -2,7 +2,7 @@
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { ChartDataPoint } from '@/lib/dashboard/chartData'
-import { format } from 'date-fns'
+import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
 
 interface StackedAreaChartProps {
   data: ChartDataPoint[]
@@ -42,14 +42,7 @@ export default function StackedAreaChart({ data, productColors }: StackedAreaCha
     '#84CC16', // lime
   ]
 
-  const formatDate = (dateStr: string) => {
-    try {
-      const date = new Date(dateStr)
-      return format(date, 'MMM d, yyyy')
-    } catch {
-      return dateStr
-    }
-  }
+  const formatDate = formatChartPeriodDate
 
   return (
     <ResponsiveContainer width="100%" height={400}>

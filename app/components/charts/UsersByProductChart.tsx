@@ -257,6 +257,7 @@ export default function UsersByProductChart({
         data={chartData}
         productColors={chartColors}
         productDisplayNames={chartDisplayNames}
+        granularity={granularity}
         isPresentationMode={isPresentationMode}
       />
     </ChartContainer>

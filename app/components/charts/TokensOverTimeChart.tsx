@@ -2,13 +2,14 @@
 
 import { useMemo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { ChartDataPoint } from '@/lib/dashboard/chartData'
-import { format } from 'date-fns'
+import { ChartDataPoint, TimeGranularity } from '@/lib/dashboard/chartData'
+import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
 
 interface TokensOverTimeChartProps {
   data: ChartDataPoint[]
   productColors: Map<string, string>
   productDisplayNames?: Map<string, string>
+  granularity?: TimeGranularity
   isPresentationMode?: boolean
 }
 
@@ -44,6 +45,7 @@ export default function TokensOverTimeChart({
   data,
   productColors,
   productDisplayNames,
+  granularity,
   isPresentationMode = false,
 }: TokensOverTimeChartProps) {
   const cumulativeData = useMemo(() => calculateCumulativeData(data), [data])
@@ -56,13 +58,7 @@ export default function TokensOverTimeChart({
   })
   const sortedProducts = Array.from(productKeys).sort()
 
-  const formatDate = (dateStr: string) => {
-    try {
-      return format(new Date(dateStr), 'MMM d, yyyy')
-    } catch {
-      return dateStr
-    }
-  }
+  const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
   if (sortedProducts.length === 0 || cumulativeData.length === 0) {
     return (

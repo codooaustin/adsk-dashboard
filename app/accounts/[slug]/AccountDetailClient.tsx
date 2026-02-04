@@ -200,6 +200,15 @@ export default function AccountDetailClient({ account, fiscalQuotas }: AccountDe
             </p>
           </Link>
           <Link
+            href={`/accounts/${account.slug}/kpis`}
+            className="p-6 bg-slate-800 border border-slate-700 rounded-lg hover:border-hello-yellow transition-colors"
+          >
+            <h2 className="text-xl font-semibold text-white mb-2">KPIs</h2>
+            <p className="text-slate-400 text-sm">
+              Key metrics and product token usage
+            </p>
+          </Link>
+          <Link
             href={`/accounts/${account.slug}/datasets`}
             className="p-6 bg-slate-800 border border-slate-700 rounded-lg hover:border-hello-yellow transition-colors"
           >

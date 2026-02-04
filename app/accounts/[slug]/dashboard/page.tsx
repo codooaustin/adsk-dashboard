@@ -1,9 +1,7 @@
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { fetchKPIData } from '@/lib/dashboard/kpis'
 import { TimeGranularity } from '@/lib/dashboard/chartData'
 import { fetchProductNamesForDashboard } from '@/lib/dashboard/productDisplay'
-import KPIStrip from '@/app/components/KPIStrip'
 import DashboardCharts from '@/app/components/DashboardCharts'
 
 interface DashboardPageProps {
@@ -30,9 +28,6 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
 
   const isPresentationMode = mode === 'present'
 
-  // Fetch KPI data
-  const kpiData = await fetchKPIData(account.id, supabase)
-
   const { displayNames: productDisplayNamesMap, productToTag, productColors: productColorsMap, productLogos: productLogosMap } =
     await fetchProductNamesForDashboard(supabase)
   const productDisplayNames = Object.fromEntries(productDisplayNamesMap)
@@ -50,8 +45,6 @@ export default async function DashboardPage({ params, searchParams }: DashboardP
           <p className="text-slate-400 text-sm">Usage Analytics Dashboard</p>
         )}
       </div>
-
-      <KPIStrip data={kpiData} isPresentationMode={isPresentationMode} />
 
       <div className={`mt-8 ${isPresentationMode ? 'mt-12' : ''}`}>
         <DashboardCharts
