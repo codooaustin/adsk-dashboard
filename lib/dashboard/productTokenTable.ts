@@ -78,7 +78,7 @@ async function fetchAggregatedTokensByMonth(
       product_name: row.product_name || 'unknown',
       tokens_consumed: Number(row.tokens_consumed) || 0,
     }))
-    allRows.push(...converted.filter((r) => r.period_date))
+    allRows.push(...converted.filter((r: { period_date: string }) => r.period_date))
     if (data.length < RPC_PAGE_SIZE || offset + data.length >= RPC_MAX_ROWS) break
     offset += data.length
   }
