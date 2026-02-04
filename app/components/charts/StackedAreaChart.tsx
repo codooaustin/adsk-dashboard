@@ -42,7 +42,7 @@ export default function StackedAreaChart({ data, productColors }: StackedAreaCha
     '#84CC16', // lime
   ]
 
-  const formatDate = formatChartPeriodDate
+  const formatDate = (value: unknown) => formatChartPeriodDate(String(value))
 
   return (
     <ResponsiveContainer width="100%" height={400}>
