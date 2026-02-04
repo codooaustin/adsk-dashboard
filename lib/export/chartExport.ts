@@ -47,7 +47,7 @@ export async function copyChartToClipboard(
       ctx.fillRect(0, 0, outW, outH)
       ctx.drawImage(img, pad, pad, img.naturalWidth, img.naturalHeight)
 
-      blob = await new Promise<Blob | null>((resolve, reject) => {
+      blob = await new Promise<Blob>((resolve, reject) => {
         canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png', 1)
       })
     }
