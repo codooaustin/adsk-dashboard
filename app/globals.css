@@ -2,10 +2,11 @@
 
 /* Artifakt Fonts - Autodesk Brand Typography */
 /* https://brand.autodesk.com/visual-system/typography */
+/* URL-encode spaces for Safari and strict environments */
 @font-face {
   font-family: 'Artifakt Legend';
-  src: url('/fonts/Artifakt Legend Bold.woff2') format('woff2'),
-       url('/fonts/Artifakt Legend Bold.woff') format('woff');
+  src: url('/fonts/Artifakt%20Legend%20Bold.woff2') format('woff2'),
+       url('/fonts/Artifakt%20Legend%20Bold.woff') format('woff');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -13,9 +14,9 @@
 
 @font-face {
   font-family: 'Artifakt Element';
-  src: url('/fonts/Artifakt Element Bold.woff2') format('woff2'),
-       url('/fonts/Artifakt Element Bold.woff') format('woff'),
-       url('/fonts/Artifakt Element Bold.ttf') format('truetype');
+  src: url('/fonts/Artifakt%20Element%20Bold.woff2') format('woff2'),
+       url('/fonts/Artifakt%20Element%20Bold.woff') format('woff'),
+       url('/fonts/Artifakt%20Element%20Bold.ttf') format('truetype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -23,8 +24,8 @@
 
 @font-face {
   font-family: 'Artifakt Element';
-  src: url('/fonts/Artifakt Element Regular.woff2') format('woff2'),
-       url('/fonts/Artifakt Element Regular.woff') format('woff');
+  src: url('/fonts/Artifakt%20Element%20Regular.woff2') format('woff2'),
+       url('/fonts/Artifakt%20Element%20Regular.woff') format('woff');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
