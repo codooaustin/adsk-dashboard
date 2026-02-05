@@ -229,67 +229,57 @@ export default function HoursByProductChart({
       })
     : 'Hours by Product'
 
+  const filtersBlock = !isPresentationMode && (
+    <ChartFilters
+      availableProducts={availableProducts}
+      source="all"
+      selectedProducts={selectedProducts}
+      startDate={startDate}
+      endDate={endDate}
+      minDate={minDate}
+      maxDate={maxDate}
+      onSourceChange={() => {}}
+      onProductsChange={setSelectedProducts}
+      onDateRangeApply={(start, end) => {
+        setStartDate(start)
+        setEndDate(end)
+      }}
+      showSourceFilter={false}
+      productDisplayNames={chartDisplayNames}
+    />
+  )
+
   if (loading) {
     return (
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          Loading hours data...
-        </div>
-      </ChartContainer>
+      <>
+        {filtersBlock}
+        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <div className="h-96 flex items-center justify-center text-slate-400">
+            Loading hours data...
+          </div>
+        </ChartContainer>
+      </>
     )
   }
 
   if (sortedProducts.length === 0 || chartData.length === 0) {
     return (
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-        {!isPresentationMode && (
-          <ChartFilters
-            availableProducts={availableProducts}
-            source="all"
-            selectedProducts={selectedProducts}
-            startDate={startDate}
-            endDate={endDate}
-            minDate={minDate}
-            maxDate={maxDate}
-            onSourceChange={() => {}}
-            onProductsChange={setSelectedProducts}
-            onDateRangeApply={(start, end) => {
-              setStartDate(start)
-              setEndDate(end)
-            }}
-            showSourceFilter={false}
-            productDisplayNames={chartDisplayNames}
-          />
-        )}
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          No hours data available
-        </div>
-      </ChartContainer>
+      <>
+        {filtersBlock}
+        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <div className="h-96 flex items-center justify-center text-slate-400">
+            No hours data available
+          </div>
+        </ChartContainer>
+      </>
     )
   }
 
   return (
-    <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-      {!isPresentationMode && (
-        <ChartFilters
-          availableProducts={availableProducts}
-          source="all"
-          selectedProducts={selectedProducts}
-          startDate={startDate}
-          endDate={endDate}
-          minDate={minDate}
-          maxDate={maxDate}
-          onSourceChange={() => {}}
-          onProductsChange={setSelectedProducts}
-          onDateRangeApply={(start, end) => {
-            setStartDate(start)
-            setEndDate(end)
-          }}
-          showSourceFilter={false}
-          productDisplayNames={chartDisplayNames}
-        />
-      )}
-      <StackedBarChart
+    <>
+      {filtersBlock}
+      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <StackedBarChart
         data={chartData}
         productColors={chartColors}
         productDisplayNames={chartDisplayNames}
@@ -300,6 +290,7 @@ export default function HoursByProductChart({
           name,
         ]}
       />
-    </ChartContainer>
+      </ChartContainer>
+    </>
   )
 }

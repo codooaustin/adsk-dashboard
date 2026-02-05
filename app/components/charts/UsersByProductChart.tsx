@@ -195,71 +195,63 @@ export default function UsersByProductChart({
       })
     : 'Users by Product'
 
+  const filtersBlock = !isPresentationMode && (
+    <ChartFilters
+      availableProducts={availableProducts}
+      source={source}
+      selectedProducts={selectedProducts}
+      startDate={startDate}
+      endDate={endDate}
+      minDate={minDate}
+      maxDate={maxDate}
+      onSourceChange={setSource}
+      onProductsChange={setSelectedProducts}
+      onDateRangeApply={(start, end) => {
+        setStartDate(start)
+        setEndDate(end)
+      }}
+      productDisplayNames={chartDisplayNames}
+    />
+  )
+
   if (loading) {
     return (
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          Loading users data...
-        </div>
-      </ChartContainer>
+      <>
+        {filtersBlock}
+        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <div className="h-96 flex items-center justify-center text-slate-400">
+            Loading users data...
+          </div>
+        </ChartContainer>
+      </>
     )
   }
 
   if (!hasData) {
     return (
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-        {!isPresentationMode && (
-          <ChartFilters
-            availableProducts={availableProducts}
-            source={source}
-            selectedProducts={selectedProducts}
-            startDate={startDate}
-            endDate={endDate}
-            minDate={minDate}
-            maxDate={maxDate}
-            onSourceChange={setSource}
-            onProductsChange={setSelectedProducts}
-            onDateRangeApply={(start, end) => {
-              setStartDate(start)
-              setEndDate(end)
-            }}
-            productDisplayNames={chartDisplayNames}
-          />
-        )}
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          No users data available
-        </div>
-      </ChartContainer>
+      <>
+        {filtersBlock}
+        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <div className="h-96 flex items-center justify-center text-slate-400">
+            No users data available
+          </div>
+        </ChartContainer>
+      </>
     )
   }
 
   return (
-    <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-      {!isPresentationMode && (
-        <ChartFilters
-          availableProducts={availableProducts}
-          source={source}
-          selectedProducts={selectedProducts}
-          startDate={startDate}
-          endDate={endDate}
-          minDate={minDate}
-          maxDate={maxDate}
-          onSourceChange={setSource}
-          onProductsChange={setSelectedProducts}
-          onDateRangeApply={(start, end) => {
-            setStartDate(start)
-            setEndDate(end)
-          }}
+    <>
+      {filtersBlock}
+      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <StackedBarChart
+          data={chartData}
+          productColors={chartColors}
           productDisplayNames={chartDisplayNames}
+          granularity={granularity}
+          isPresentationMode={isPresentationMode}
         />
-      )}
-      <StackedBarChart
-        data={chartData}
-        productColors={chartColors}
-        productDisplayNames={chartDisplayNames}
-        granularity={granularity}
-        isPresentationMode={isPresentationMode}
-      />
-    </ChartContainer>
+      </ChartContainer>
+    </>
   )
 }

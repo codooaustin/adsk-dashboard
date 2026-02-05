@@ -1,7 +1,8 @@
 'use client'
 
 import { TimeGranularity } from '@/lib/dashboard/chartData'
-import TokenChartsSection from './charts/TokenChartsSection'
+import TokensByProductSection from './charts/TokensByProductSection'
+import TokensConsumedOverTimeSection from './charts/TokensConsumedOverTimeSection'
 import EventsOverTimeChart from './charts/EventsOverTimeChart'
 import HoursByProductChart from './charts/HoursByProductChart'
 import UsersByProductChart from './charts/UsersByProductChart'
@@ -79,7 +80,7 @@ export default function DashboardCharts({
         </div>
       )}
 
-      <TokenChartsSection
+      <TokensByProductSection
         accountId={accountId}
         accountSlug={accountSlug}
         granularity={granularity}
@@ -91,7 +92,7 @@ export default function DashboardCharts({
         isPresentationMode={isPresentationMode}
       />
 
-      <EventsOverTimeChart
+      <UsersByProductChart
         accountId={accountId}
         accountSlug={accountSlug}
         granularity={granularity}
@@ -115,7 +116,19 @@ export default function DashboardCharts({
         isPresentationMode={isPresentationMode}
       />
 
-      <UsersByProductChart
+      <EventsOverTimeChart
+        accountId={accountId}
+        accountSlug={accountSlug}
+        granularity={granularity}
+        productDisplayNames={productDisplayNames}
+        productToTag={productToTag}
+        productColors={productColors}
+        productLogos={productLogos}
+        groupByTag={groupByTag}
+        isPresentationMode={isPresentationMode}
+      />
+
+      <TokensConsumedOverTimeSection
         accountId={accountId}
         accountSlug={accountSlug}
         granularity={granularity}

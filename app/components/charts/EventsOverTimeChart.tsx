@@ -1,10 +1,20 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 import { ChartDataPoint } from '@/lib/dashboard/chartData'
 import { TimeGranularity } from '@/lib/dashboard/chartData'
 import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
+import { computePeriodStats, formatStat } from '@/lib/dashboard/chartStats'
 import { createClient } from '@/lib/supabase/client'
 import { getAvailableProductsForEvents, getDateRangeForEvents } from '@/lib/dashboard/rawChartData'
 import { aggregateChartDataByTag } from '@/lib/dashboard/productDisplay'
@@ -210,6 +220,12 @@ export default function EventsOverTimeChart({
     })
   })
   const sortedProducts = Array.from(productKeys).sort()
+  const stats = computePeriodStats(chartData, sortedProducts)
+  const chartDataWithTotals = chartData.map((point, i) => ({
+    ...point,
+    _periodTotal: stats.periodTotals[i],
+    _cumulativeTotal: stats.cumulativeTotals[i],
+  }))
 
   const displayNames = productDisplayNames ?? new Map()
   const logos = productLogos ?? new Map()
@@ -238,69 +254,59 @@ export default function EventsOverTimeChart({
 
   const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
+  const filtersBlock = !isPresentationMode && (
+    <ChartFilters
+      availableProducts={availableProducts}
+      source="all"
+      selectedProducts={selectedProducts}
+      startDate={startDate}
+      endDate={endDate}
+      minDate={minDate}
+      maxDate={maxDate}
+      onSourceChange={() => {}}
+      onProductsChange={setSelectedProducts}
+      onDateRangeApply={(start, end) => {
+        setStartDate(start)
+        setEndDate(end)
+      }}
+      showSourceFilter={false}
+      productDisplayNames={chartDisplayNames}
+    />
+  )
+
   if (loading) {
     return (
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          Loading users data...
-        </div>
-      </ChartContainer>
+      <>
+        {filtersBlock}
+        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <div className="h-96 flex items-center justify-center text-slate-400">
+            Loading users data...
+          </div>
+        </ChartContainer>
+      </>
     )
   }
 
   if (sortedProducts.length === 0 || chartData.length === 0) {
     return (
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-        {!isPresentationMode && (
-          <ChartFilters
-            availableProducts={availableProducts}
-            source="all"
-            selectedProducts={selectedProducts}
-            startDate={startDate}
-            endDate={endDate}
-            minDate={minDate}
-            maxDate={maxDate}
-            onSourceChange={() => {}}
-            onProductsChange={setSelectedProducts}
-            onDateRangeApply={(start, end) => {
-              setStartDate(start)
-              setEndDate(end)
-            }}
-            showSourceFilter={false}
-            productDisplayNames={chartDisplayNames}
-          />
-        )}
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          No users data available
-        </div>
-      </ChartContainer>
+      <>
+        {filtersBlock}
+        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+          <div className="h-96 flex items-center justify-center text-slate-400">
+            No users data available
+          </div>
+        </ChartContainer>
+      </>
     )
   }
 
   return (
-    <ChartContainer title={title} isPresentationMode={isPresentationMode}>
-      {!isPresentationMode && (
-        <ChartFilters
-          availableProducts={availableProducts}
-          source="all"
-          selectedProducts={selectedProducts}
-          startDate={startDate}
-          endDate={endDate}
-          minDate={minDate}
-          maxDate={maxDate}
-          onSourceChange={() => {}}
-          onProductsChange={setSelectedProducts}
-          onDateRangeApply={(start, end) => {
-            setStartDate(start)
-            setEndDate(end)
-          }}
-          showSourceFilter={false}
-          productDisplayNames={chartDisplayNames}
-        />
-      )}
-      <ResponsiveContainer width="100%" height={400}>
+    <>
+      {filtersBlock}
+      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ResponsiveContainer width="100%" height={400}>
         <BarChart
-          data={chartData}
+          data={chartDataWithTotals}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -322,6 +328,37 @@ export default function EventsOverTimeChart({
               color: '#FFFFFF',
             }}
             labelFormatter={formatDate}
+            content={(p) => {
+              if (!p.payload?.length || !p.label) return null
+              const payload = p.payload as Array<{ name: string; value: number; dataKey: string; payload?: { _periodTotal?: number; _cumulativeTotal?: number } }>
+              const point = payload[0]?.payload
+              const periodTotal = point?._periodTotal ?? payload.reduce((s, e) => s + (Number(e.value) || 0), 0)
+              const cumulativeTotal = point?._cumulativeTotal ?? 0
+              return (
+                <div
+                  className="rounded-lg border border-slate-600 px-3 py-2 text-sm shadow-lg"
+                  style={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '6px', color: '#FFFFFF' }}
+                >
+                  <div className="mb-1 font-medium text-slate-300">{formatDate(p.label)}</div>
+                  {payload.map((entry) => (
+                    <div key={entry.dataKey} className="flex justify-between gap-4">
+                      <span>{entry.name}</span>
+                      <span>{formatStat(Number(entry.value))}</span>
+                    </div>
+                  ))}
+                  <div className="mt-1 border-t border-slate-600 pt-1 flex justify-between gap-4">
+                    <span>Period total</span>
+                    <span>{formatStat(periodTotal)}</span>
+                  </div>
+                  {cumulativeTotal > 0 && (
+                    <div className="flex justify-between gap-4">
+                      <span>Cumulative total</span>
+                      <span>{formatStat(cumulativeTotal)}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            }}
           />
           <Legend
             wrapperStyle={{ color: '#FFFFFF', paddingTop: '20px' }}
@@ -339,7 +376,8 @@ export default function EventsOverTimeChart({
             )
           })}
         </BarChart>
-      </ResponsiveContainer>
-    </ChartContainer>
+        </ResponsiveContainer>
+      </ChartContainer>
+    </>
   )
 }

@@ -1,28 +1,19 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { ChartDataPoint, TimeGranularity } from '@/lib/dashboard/chartData'
 import { createClient } from '@/lib/supabase/client'
 import { getDateRangeForAccount } from '@/lib/dashboard/rawChartData'
-import {
-  aggregateChartDataByTag,
-} from '@/lib/dashboard/productDisplay'
-import ChartContainer from './ChartContainer'
-import ChartFilters, { SourceFilter } from './ChartFilters'
-import StackedBarChart from './StackedBarChart'
-import TokensOverTimeChart from './TokensOverTimeChart'
+import { aggregateChartDataByTag } from '@/lib/dashboard/productDisplay'
 import { chartTitleContent } from './ChartTitleContent'
+import type { SourceFilter } from './ChartFilters'
 
-interface TokenChartsSectionProps {
-  accountId: string
-  accountSlug: string
-  granularity: TimeGranularity
-  productDisplayNames?: Map<string, string>
-  productToTag?: Map<string, string | null>
-  productColors?: Map<string, string>
-  productLogos?: Map<string, string>
-  groupByTag?: boolean
-  isPresentationMode?: boolean
+const GRANULARITY_LABELS: Record<TimeGranularity, string> = {
+  day: 'Daily',
+  week: 'Weekly',
+  month: 'Monthly',
+  quarter: 'Quarterly',
+  year: 'Annual',
 }
 
 function productKeysFromData(data: ChartDataPoint[]): string[] {
@@ -66,7 +57,44 @@ function filterCachedData(
   return filtered
 }
 
-export default function TokenChartsSection({
+export interface UseTokenChartDataParams {
+  accountId: string
+  accountSlug: string
+  granularity: TimeGranularity
+  productDisplayNames?: Map<string, string>
+  productToTag?: Map<string, string | null>
+  productColors?: Map<string, string>
+  productLogos?: Map<string, string>
+  groupByTag?: boolean
+}
+
+export interface TokenChartFilterProps {
+  availableProducts: string[]
+  source: SourceFilter
+  selectedProducts: string[]
+  startDate: string | null
+  endDate: string | null
+  minDate: string | null
+  maxDate: string | null
+  onSourceChange: (source: SourceFilter) => void
+  onProductsChange: (products: string[]) => void
+  onDateRangeApply: (startDate: string | null, endDate: string | null) => void
+  productDisplayNames: Map<string, string>
+}
+
+export interface UseTokenChartDataResult {
+  loading: boolean
+  hasData: boolean
+  chartData: ChartDataPoint[]
+  chartDisplayNames: Map<string, string>
+  chartColors: Map<string, string>
+  granularity: TimeGranularity
+  tokensByProductTitle: ReactNode
+  tokensOverTimeTitle: ReactNode
+  filterProps: TokenChartFilterProps
+}
+
+export function useTokenChartData({
   accountId,
   accountSlug,
   granularity,
@@ -75,8 +103,7 @@ export default function TokenChartsSection({
   productColors = new Map(),
   productLogos = new Map(),
   groupByTag = false,
-  isPresentationMode = false,
-}: TokenChartsSectionProps) {
+}: UseTokenChartDataParams): UseTokenChartDataResult {
   const [metadataReady, setMetadataReady] = useState(false)
   const [loading, setLoading] = useState(true)
   const [availableProducts, setAvailableProducts] = useState<string[]>([])
@@ -173,12 +200,13 @@ export default function TokenChartsSection({
   }, [groupByTag, productToTag, filteredData, productDisplayNames, productColors])
 
   const chartData = aggregated?.data ?? filteredData
-  const chartDisplayNames = aggregated?.displayNames ?? productDisplayNames
+  const chartDisplayNames = aggregated?.displayNames ?? productDisplayNames ?? new Map()
   const chartColors = aggregated?.colors ?? productColors
 
   const displayNames = productDisplayNames ?? new Map()
   const logos = productLogos ?? new Map()
   const singleProduct = selectedProducts.length === 1 ? selectedProducts[0] : null
+  const periodLabel = GRANULARITY_LABELS[granularity]
   const tokensByProductTitle = singleProduct
     ? chartTitleContent({
         metric: 'Tokens',
@@ -186,6 +214,7 @@ export default function TokenChartsSection({
         productDisplayNames: displayNames,
         productLogos: logos,
         defaultTitle: 'Tokens by Product',
+        period: periodLabel,
       })
     : 'Tokens by Product'
   const tokensOverTimeTitle = singleProduct
@@ -195,6 +224,7 @@ export default function TokenChartsSection({
         productDisplayNames: displayNames,
         productLogos: logos,
         defaultTitle: 'Tokens Consumed Over Time',
+        period: periodLabel,
       })
     : 'Tokens Consumed Over Time'
 
@@ -206,56 +236,44 @@ export default function TokenChartsSection({
   })
   const hasData = chartData.length > 0 && productKeys.size > 0
 
-  return (
-    <div className="space-y-8">
-      {!isPresentationMode && (
-        <ChartFilters
-          availableProducts={availableProducts}
-          source={source}
-          selectedProducts={selectedProducts}
-          startDate={startDate}
-          endDate={endDate}
-          minDate={minDate}
-          maxDate={maxDate}
-          onSourceChange={setSource}
-          onProductsChange={setSelectedProducts}
-          onDateRangeApply={(start, end) => {
-            setStartDate(start)
-            setEndDate(end)
-          }}
-          productDisplayNames={chartDisplayNames}
-        />
-      )}
-      {loading ? (
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          Loading chart data...
-        </div>
-      ) : !hasData ? (
-        <div className="h-96 flex items-center justify-center text-slate-400">
-          No data available
-        </div>
-      ) : (
-        <>
-          <ChartContainer title={tokensByProductTitle} isPresentationMode={isPresentationMode}>
-            <StackedBarChart
-              data={chartData}
-              productColors={chartColors}
-              productDisplayNames={chartDisplayNames}
-              granularity={granularity}
-              isPresentationMode={isPresentationMode}
-            />
-          </ChartContainer>
-          <ChartContainer title={tokensOverTimeTitle} isPresentationMode={isPresentationMode}>
-            <TokensOverTimeChart
-              data={chartData}
-              productColors={chartColors}
-              productDisplayNames={chartDisplayNames}
-              granularity={granularity}
-              isPresentationMode={isPresentationMode}
-            />
-          </ChartContainer>
-        </>
-      )}
-    </div>
+  const filterProps: TokenChartFilterProps = useMemo(
+    () => ({
+      availableProducts,
+      source,
+      selectedProducts,
+      startDate,
+      endDate,
+      minDate,
+      maxDate,
+      onSourceChange: setSource,
+      onProductsChange: setSelectedProducts,
+      onDateRangeApply: (start, end) => {
+        setStartDate(start)
+        setEndDate(end)
+      },
+      productDisplayNames: chartDisplayNames,
+    }),
+    [
+      availableProducts,
+      source,
+      selectedProducts,
+      startDate,
+      endDate,
+      minDate,
+      maxDate,
+      chartDisplayNames,
+    ]
   )
+
+  return {
+    loading,
+    hasData,
+    chartData,
+    chartDisplayNames,
+    chartColors,
+    granularity,
+    tokensByProductTitle,
+    tokensOverTimeTitle,
+    filterProps,
+  }
 }

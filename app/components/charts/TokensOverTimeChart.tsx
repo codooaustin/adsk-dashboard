@@ -1,9 +1,19 @@
 'use client'
 
 import { useMemo } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts'
 import { ChartDataPoint, TimeGranularity } from '@/lib/dashboard/chartData'
 import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
+import { formatStat } from '@/lib/dashboard/chartStats'
 
 interface TokensOverTimeChartProps {
   data: ChartDataPoint[]
@@ -41,6 +51,33 @@ function calculateCumulativeData(data: ChartDataPoint[]): ChartDataPoint[] {
   })
 }
 
+function TokensOverTimeTooltipContent(
+  props: { payload?: Array<{ name?: string; value?: unknown; dataKey: string }>; label?: string },
+  formatDate: (s: string) => string,
+  displayLabel: (key: string) => string
+) {
+  if (!props.payload?.length || !props.label) return null
+  const total = props.payload.reduce((s, p) => s + (Number(p.value) || 0), 0)
+  return (
+    <div
+      className="rounded-lg border border-slate-600 px-3 py-2 text-sm shadow-lg"
+      style={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '6px', color: '#FFFFFF' }}
+    >
+      <div className="mb-1 font-medium text-slate-300">{formatDate(props.label)}</div>
+      {props.payload.map((entry) => (
+        <div key={entry.dataKey} className="flex justify-between gap-4">
+          <span>{displayLabel(entry.dataKey)}</span>
+          <span>{formatStat(Number(entry.value))}</span>
+        </div>
+      ))}
+      <div className="mt-1 border-t border-slate-600 pt-1 flex justify-between gap-4">
+        <span>Cumulative total</span>
+        <span>{formatStat(total)}</span>
+      </div>
+    </div>
+  )
+}
+
 export default function TokensOverTimeChart({
   data,
   productColors,
@@ -57,7 +94,6 @@ export default function TokensOverTimeChart({
     })
   })
   const sortedProducts = Array.from(productKeys).sort()
-
   const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
   if (sortedProducts.length === 0 || cumulativeData.length === 0) {
@@ -90,6 +126,13 @@ export default function TokensOverTimeChart({
             color: '#FFFFFF',
           }}
           labelFormatter={formatDate}
+          content={(p) =>
+            TokensOverTimeTooltipContent(
+              p as { payload?: Array<{ name?: string; value?: unknown; dataKey: string }>; label?: string },
+              formatDate,
+              displayLabel
+            )
+          }
         />
         <Legend wrapperStyle={{ color: '#FFFFFF', paddingTop: '20px' }} />
         {sortedProducts.map((productKey, index) => {
