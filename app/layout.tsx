@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navigation from "./components/Navigation";
+import AppShell from "./components/AppShell";
 
 export const metadata: Metadata = {
   title: "Account Management",
@@ -14,11 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="bg-black text-white">
-      <body
-        className="antialiased bg-black text-white min-h-screen"
-      >
-        <Navigation />
-        {children}
+      <body className="antialiased bg-black text-white min-h-screen">
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
