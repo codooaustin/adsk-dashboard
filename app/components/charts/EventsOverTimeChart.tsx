@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -18,7 +18,7 @@ import { computePeriodStats, formatStat } from '@/lib/dashboard/chartStats'
 import { createClient } from '@/lib/supabase/client'
 import { getAvailableProductsForEvents, getDateRangeForEvents } from '@/lib/dashboard/rawChartData'
 import { aggregateChartDataByTag } from '@/lib/dashboard/productDisplay'
-import ChartContainer from './ChartContainer'
+import ChartContainer, { ChartCopyButton } from './ChartContainer'
 import ChartFilters from './ChartFilters'
 import { chartTitleContent } from './ChartTitleContent'
 
@@ -254,6 +254,8 @@ export default function EventsOverTimeChart({
 
   const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
+  const chartRef = useRef<HTMLDivElement>(null)
+
   const filtersBlock = !isPresentationMode && (
     <ChartFilters
       availableProducts={availableProducts}
@@ -271,6 +273,7 @@ export default function EventsOverTimeChart({
       }}
       showSourceFilter={false}
       productDisplayNames={chartDisplayNames}
+      rightContent={<ChartCopyButton chartRef={chartRef} />}
     />
   )
 
@@ -278,7 +281,7 @@ export default function EventsOverTimeChart({
     return (
       <>
         {filtersBlock}
-        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             Loading users data...
           </div>
@@ -291,7 +294,7 @@ export default function EventsOverTimeChart({
     return (
       <>
         {filtersBlock}
-        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             No users data available
           </div>
@@ -303,7 +306,7 @@ export default function EventsOverTimeChart({
   return (
     <>
       {filtersBlock}
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+      <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
         <ResponsiveContainer width="100%" height={400}>
         <BarChart
           data={chartDataWithTotals}

@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { formatChartPeriodDate } from '@/lib/dashboard/formatChartDate'
 import type { ProductTokenTableData, ProductTokenRow } from '@/lib/dashboard/productTokenTable'
 
 const MIN_SCALE = 0.5
@@ -45,6 +44,12 @@ function formatGrowthPercent(value: number | null): string {
   if (value == null) return '—'
   const sign = value >= 0 ? '+' : ''
   return `${sign}${value.toFixed(1)}%`
+}
+
+/** Round to nearest half user for display (e.g. 45.3 → "45.5", 12 → "12") */
+function formatUsers(value: number): string {
+  const rounded = Math.round(value * 2) / 2
+  return rounded % 1 === 0 ? String(Math.round(rounded)) : rounded.toFixed(1)
 }
 
 export default function ProductTokenTable({ data, productDisplayNames = {} }: ProductTokenTableProps) {
@@ -108,6 +113,43 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
     }
   }
 
+  const totals = useMemo(() => {
+    return rows.reduce(
+      (acc, row) => ({
+        cumulative: acc.cumulative + row.cumulative,
+        avg3m: acc.avg3m + row.avg3m,
+        avg6m: acc.avg6m + row.avg6m,
+        avg12m: acc.avg12m + row.avg12m,
+        avg18m: acc.avg18m + row.avg18m,
+        avg24m: acc.avg24m + row.avg24m,
+        avg36m: acc.avg36m + row.avg36m,
+        cumulativeUsers: acc.cumulativeUsers + row.cumulativeUsers,
+        avg3mUsers: acc.avg3mUsers + row.avg3mUsers,
+        avg6mUsers: acc.avg6mUsers + row.avg6mUsers,
+        avg12mUsers: acc.avg12mUsers + row.avg12mUsers,
+        avg18mUsers: acc.avg18mUsers + row.avg18mUsers,
+        avg24mUsers: acc.avg24mUsers + row.avg24mUsers,
+        avg36mUsers: acc.avg36mUsers + row.avg36mUsers,
+      }),
+      {
+        cumulative: 0,
+        avg3m: 0,
+        avg6m: 0,
+        avg12m: 0,
+        avg18m: 0,
+        avg24m: 0,
+        avg36m: 0,
+        cumulativeUsers: 0,
+        avg3mUsers: 0,
+        avg6mUsers: 0,
+        avg12mUsers: 0,
+        avg18mUsers: 0,
+        avg24mUsers: 0,
+        avg36mUsers: 0,
+      }
+    )
+  }, [rows])
+
   const sortedRows = useMemo(() => {
     if (!sortKey) return rows
     const dir = sortDirection === 'asc' ? 1 : -1
@@ -167,19 +209,6 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
               Product
               <SortIndicator columnKey="product" />
             </th>
-            {months.map((m) => (
-              <th
-                key={m}
-                className={thClass}
-                onClick={() => handleSort(m)}
-                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleSort(m)}
-                role="button"
-                tabIndex={0}
-              >
-                {formatChartPeriodDate(m, 'month')}
-                <SortIndicator columnKey={m} />
-              </th>
-            ))}
             <th
               className={thClass}
               onClick={() => handleSort('cumulative')}
@@ -318,22 +347,17 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
               <td className="px-4 py-3 text-white font-medium border-b border-slate-700 sticky left-0 bg-slate-800/50 hover:bg-slate-800">
                 {displayName(row.productName)}
               </td>
-              {months.map((m) => (
-                <td key={m} className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                  {formatNumber(row.monthly[m] ?? 0)}
-                </td>
-              ))}
               <td className="px-4 py-3 text-white border-b border-slate-700 tabular-nums">
-                {formatNumber(row.cumulative)}
+                {formatNumber(row.cumulative)} ({formatUsers(row.cumulativeUsers)} users)
               </td>
               <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                {formatNumber(row.avg3m)}
+                {formatNumber(row.avg3m)} ({formatUsers(row.avg3mUsers)} users)
               </td>
               <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                {formatNumber(row.avg6m)}
+                {formatNumber(row.avg6m)} ({formatUsers(row.avg6mUsers)} users)
               </td>
               <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                {formatNumber(row.avg12m)}
+                {formatNumber(row.avg12m)} ({formatUsers(row.avg12mUsers)} users)
               </td>
               <td
                 className={`px-4 py-3 border-b border-slate-700 tabular-nums ${
@@ -344,7 +368,7 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
                     : 'text-slate-500'
                 }`}
               >
-                {formatGrowthPercent(row.avgGrowth3m)}
+                {formatGrowthPercent(row.avgGrowth3m)} / {formatGrowthPercent(row.avgGrowth3mUsers)} users
               </td>
               <td
                 className={`px-4 py-3 border-b border-slate-700 tabular-nums ${
@@ -355,7 +379,7 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
                     : 'text-slate-500'
                 }`}
               >
-                {formatGrowthPercent(row.avgGrowth6m)}
+                {formatGrowthPercent(row.avgGrowth6m)} / {formatGrowthPercent(row.avgGrowth6mUsers)} users
               </td>
               <td
                 className={`px-4 py-3 border-b border-slate-700 tabular-nums ${
@@ -366,16 +390,16 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
                     : 'text-slate-500'
                 }`}
               >
-                {formatGrowthPercent(row.avgGrowth12m)}
+                {formatGrowthPercent(row.avgGrowth12m)} / {formatGrowthPercent(row.avgGrowth12mUsers)} users
               </td>
               <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                {formatNumber(row.avg18m)}
+                {formatNumber(row.avg18m)} ({formatUsers(row.avg18mUsers)} users)
               </td>
               <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                {formatNumber(row.avg24m)}
+                {formatNumber(row.avg24m)} ({formatUsers(row.avg24mUsers)} users)
               </td>
               <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
-                {formatNumber(row.avg36m)}
+                {formatNumber(row.avg36m)} ({formatUsers(row.avg36mUsers)} users)
               </td>
               <td
                 className={`px-4 py-3 border-b border-slate-700 tabular-nums ${
@@ -386,7 +410,7 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
                     : 'text-slate-500'
                 }`}
               >
-                {formatGrowthPercent(row.avgGrowth18m)}
+                {formatGrowthPercent(row.avgGrowth18m)} / {formatGrowthPercent(row.avgGrowth18mUsers)} users
               </td>
               <td
                 className={`px-4 py-3 border-b border-slate-700 tabular-nums ${
@@ -397,7 +421,7 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
                     : 'text-slate-500'
                 }`}
               >
-                {formatGrowthPercent(row.avgGrowth24m)}
+                {formatGrowthPercent(row.avgGrowth24m)} / {formatGrowthPercent(row.avgGrowth24mUsers)} users
               </td>
               <td
                 className={`px-4 py-3 border-b border-slate-700 tabular-nums ${
@@ -408,11 +432,45 @@ export default function ProductTokenTable({ data, productDisplayNames = {} }: Pr
                     : 'text-slate-500'
                 }`}
               >
-                {formatGrowthPercent(row.avgGrowth36m)}
+                {formatGrowthPercent(row.avgGrowth36m)} / {formatGrowthPercent(row.avgGrowth36mUsers)} users
               </td>
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr className="bg-slate-800 border-t-2 border-slate-600">
+            <td className="px-4 py-3 text-white font-semibold border-b border-slate-700 sticky left-0 bg-slate-800">
+              Total
+            </td>
+            <td className="px-4 py-3 text-white border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.cumulative)} ({formatUsers(totals.cumulativeUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.avg3m)} ({formatUsers(totals.avg3mUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.avg6m)} ({formatUsers(totals.avg6mUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.avg12m)} ({formatUsers(totals.avg12mUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-500 border-b border-slate-700 tabular-nums">—</td>
+            <td className="px-4 py-3 text-slate-500 border-b border-slate-700 tabular-nums">—</td>
+            <td className="px-4 py-3 text-slate-500 border-b border-slate-700 tabular-nums">—</td>
+            <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.avg18m)} ({formatUsers(totals.avg18mUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.avg24m)} ({formatUsers(totals.avg24mUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-300 border-b border-slate-700 tabular-nums">
+              {formatNumber(totals.avg36m)} ({formatUsers(totals.avg36mUsers)} users)
+            </td>
+            <td className="px-4 py-3 text-slate-500 border-b border-slate-700 tabular-nums">—</td>
+            <td className="px-4 py-3 text-slate-500 border-b border-slate-700 tabular-nums">—</td>
+            <td className="px-4 py-3 text-slate-500 border-b border-slate-700 tabular-nums">—</td>
+          </tr>
+        </tfoot>
     </table>
   )
 

@@ -1,7 +1,8 @@
 'use client'
 
+import { useRef } from 'react'
 import { TimeGranularity } from '@/lib/dashboard/chartData'
-import ChartContainer from './ChartContainer'
+import ChartContainer, { ChartCopyButton } from './ChartContainer'
 import ChartFilters from './ChartFilters'
 import TokensOverTimeChart from './TokensOverTimeChart'
 import { useTokenChartData } from './useTokenChartData'
@@ -49,23 +50,30 @@ export default function TokensConsumedOverTimeSection({
     groupByTag,
   })
 
+  const chartRef = useRef<HTMLDivElement>(null)
+
   return (
     <div className="space-y-8">
-      {!isPresentationMode && <ChartFilters {...filterProps} />}
+      {!isPresentationMode && (
+        <ChartFilters
+          {...filterProps}
+          rightContent={<ChartCopyButton chartRef={chartRef} />}
+        />
+      )}
       {loading ? (
-        <ChartContainer title="Tokens Consumed Over Time" isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title="Tokens Consumed Over Time" isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             Loading chart data...
           </div>
         </ChartContainer>
       ) : !hasData ? (
-        <ChartContainer title="Tokens Consumed Over Time" isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title="Tokens Consumed Over Time" isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             No data available
           </div>
         </ChartContainer>
       ) : (
-        <ChartContainer title={tokensOverTimeTitle} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={tokensOverTimeTitle} isPresentationMode={isPresentationMode}>
           <TokensOverTimeChart
             data={chartData}
             productColors={chartColors}

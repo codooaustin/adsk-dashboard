@@ -1,17 +1,24 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentFiscalYear } from '@/lib/utils/fiscalYear'
 
-export async function GET() {
+const MIN_FY = 2000
+const MAX_FY = 2100
+
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
-    const currentFiscalYear = getCurrentFiscalYear()
+    const currentFy = getCurrentFiscalYear()
+    const fiscalYearParam = request.nextUrl.searchParams.get('fiscal_year')
+    const parsed = fiscalYearParam ? parseInt(fiscalYearParam, 10) : NaN
+    const fiscalYear =
+      !isNaN(parsed) && parsed >= MIN_FY && parsed <= MAX_FY ? parsed : currentFy
 
-    // Fetch all quota attainment transactions for current fiscal year
+    // Fetch all quota attainment transactions for the selected fiscal year
     const { data: transactions, error: transactionsError } = await supabase
       .from('quota_attainment_transactions')
       .select('account_id, final_credited_amount')
-      .eq('fiscal_year', currentFiscalYear)
+      .eq('fiscal_year', fiscalYear)
 
     if (transactionsError) {
       console.error('Error fetching quota attainment transactions:', transactionsError)
@@ -34,11 +41,11 @@ export async function GET() {
       }
     }
 
-    // Fetch all fiscal quotas for current fiscal year across all accounts
+    // Fetch all fiscal quotas for the selected fiscal year across all accounts
     const { data: quotas, error: quotasError } = await supabase
       .from('account_fiscal_quotas')
       .select('acv_quota')
-      .eq('fiscal_year', currentFiscalYear)
+      .eq('fiscal_year', fiscalYear)
 
     if (quotasError) {
       console.error('Error fetching fiscal quotas:', quotasError)
@@ -48,7 +55,7 @@ export async function GET() {
       )
     }
 
-    // Sum all quotas for current fiscal year
+    // Sum all quotas for the selected fiscal year
     let totalQuota = 0
     for (const quota of quotas || []) {
       if (quota.acv_quota) {
@@ -62,7 +69,7 @@ export async function GET() {
       : null
 
     return NextResponse.json({
-      fiscal_year: currentFiscalYear,
+      fiscal_year: fiscalYear,
       total_attainment: totalAttainment,
       total_quota: totalQuota,
       attainment_percentage: attainmentPercentage,

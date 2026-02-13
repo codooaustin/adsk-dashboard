@@ -33,7 +33,7 @@ export function chartTitleContent({
   if (logoUrl) {
     return (
       <>
-        <img src={logoUrl} alt="" className="h-[40px] w-auto object-contain flex-shrink-0 mr-3" />
+        <img src={logoUrl} alt="" className="h-6 w-auto object-contain flex-shrink-0 mr-3" />
         <span>{suffix}</span>
       </>
     )

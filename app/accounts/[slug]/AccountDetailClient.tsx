@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import EditAccountModal from '@/app/components/EditAccountModal'
 import QuotaAttainmentDisplay from '@/app/components/QuotaAttainmentDisplay'
 import QuotaAttainmentTransactionsTable from '@/app/components/QuotaAttainmentTransactionsTable'
@@ -146,26 +145,42 @@ export default function AccountDetailClient({ account, fiscalQuotas }: AccountDe
         {fiscalQuotas.length > 0 && (
           <div className="mb-8 p-6 bg-slate-800 rounded-lg border border-slate-700">
             <h2 className="text-lg font-semibold text-white mb-4">Fiscal Year Quotas</h2>
-            <div className="space-y-2">
-              {fiscalQuotas.map((quota) => (
-                <div
-                  key={quota.id}
-                  className="flex justify-between items-center p-3 bg-slate-900 rounded border border-slate-700"
-                >
-                  <div>
-                    <span className="text-white font-medium">FY {quota.fiscal_year}</span>
-                    <span className="text-slate-400 ml-2">
+            <table className="w-full border-collapse border border-slate-700">
+              <thead>
+                <tr className="bg-slate-900">
+                  <th className="border border-slate-700 px-4 py-3 text-left text-sm font-medium text-slate-300">
+                    Fiscal Year
+                  </th>
+                  <th className="border border-slate-700 px-4 py-3 text-left text-sm font-medium text-slate-300">
+                    ACV
+                  </th>
+                  {account.contract_type === 'Enterprise Business Agreement' && (
+                    <th className="border border-slate-700 px-4 py-3 text-left text-sm font-medium text-slate-300">
+                      Tokens
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {fiscalQuotas.map((quota) => (
+                  <tr key={quota.id} className="bg-slate-900">
+                    <td className="border border-slate-700 px-4 py-3 text-white font-medium">
+                      FY {quota.fiscal_year}
+                    </td>
+                    <td className="border border-slate-700 px-4 py-3 text-slate-400">
                       {formatCurrency(quota.acv_quota)}
-                    </span>
-                    {account.contract_type === 'Enterprise Business Agreement' && quota.token_quota && (
-                      <span className="text-slate-400 ml-2">
-                        , {formatNumber(quota.token_quota)} Tokens
-                      </span>
+                    </td>
+                    {account.contract_type === 'Enterprise Business Agreement' && (
+                      <td className="border border-slate-700 px-4 py-3 text-slate-400">
+                        {quota.token_quota != null
+                          ? formatNumber(quota.token_quota)
+                          : '—'}
+                      </td>
                     )}
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -187,37 +202,6 @@ export default function AccountDetailClient({ account, fiscalQuotas }: AccountDe
             <p className="text-slate-400 text-sm whitespace-pre-wrap">{account.notes}</p>
           </div>
         )}
-
-        {/* Quick Links */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link
-            href={`/accounts/${account.slug}/dashboard`}
-            className="p-6 bg-slate-800 border border-slate-700 rounded-lg hover:border-hello-yellow transition-colors"
-          >
-            <h2 className="text-xl font-semibold text-white mb-2">Dashboard</h2>
-            <p className="text-slate-400 text-sm">
-              View usage analytics and visualizations
-            </p>
-          </Link>
-          <Link
-            href={`/accounts/${account.slug}/kpis`}
-            className="p-6 bg-slate-800 border border-slate-700 rounded-lg hover:border-hello-yellow transition-colors"
-          >
-            <h2 className="text-xl font-semibold text-white mb-2">KPIs</h2>
-            <p className="text-slate-400 text-sm">
-              Key metrics and product token usage
-            </p>
-          </Link>
-          <Link
-            href={`/accounts/${account.slug}/datasets`}
-            className="p-6 bg-slate-800 border border-slate-700 rounded-lg hover:border-hello-yellow transition-colors"
-          >
-            <h2 className="text-xl font-semibold text-white mb-2">Datasets</h2>
-            <p className="text-slate-400 text-sm">
-              Upload and manage usage data files
-            </p>
-          </Link>
-        </div>
       </div>
 
       <EditAccountModal

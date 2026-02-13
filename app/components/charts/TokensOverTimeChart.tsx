@@ -21,6 +21,10 @@ interface TokensOverTimeChartProps {
   productDisplayNames?: Map<string, string>
   granularity?: TimeGranularity
   isPresentationMode?: boolean
+  /** When true (default), chart shows cumulative totals over time. When false, shows per-period values. */
+  cumulative?: boolean
+  /** Optional map of reason comments keyed by `${date}|${productKey}` for tooltip (e.g. manual adjustments). */
+  reasonCommentsByPoint?: Record<string, string[]>
 }
 
 const DEFAULT_COLORS = [
@@ -54,24 +58,39 @@ function calculateCumulativeData(data: ChartDataPoint[]): ChartDataPoint[] {
 function TokensOverTimeTooltipContent(
   props: { payload?: Array<{ name?: string; value?: unknown; dataKey: string }>; label?: string },
   formatDate: (s: string) => string,
-  displayLabel: (key: string) => string
+  displayLabel: (key: string) => string,
+  cumulative: boolean,
+  reasonCommentsByPoint?: Record<string, string[]>
 ) {
   if (!props.payload?.length || !props.label) return null
   const total = props.payload.reduce((s, p) => s + (Number(p.value) || 0), 0)
+  const label = props.label
   return (
     <div
       className="rounded-lg border border-slate-600 px-3 py-2 text-sm shadow-lg"
       style={{ backgroundColor: '#1F2937', border: '1px solid #374151', borderRadius: '6px', color: '#FFFFFF' }}
     >
-      <div className="mb-1 font-medium text-slate-300">{formatDate(props.label)}</div>
-      {props.payload.map((entry) => (
-        <div key={entry.dataKey} className="flex justify-between gap-4">
-          <span>{displayLabel(entry.dataKey)}</span>
-          <span>{formatStat(Number(entry.value))}</span>
-        </div>
-      ))}
+      <div className="mb-1 font-medium text-slate-300">{formatDate(label)}</div>
+      {props.payload.map((entry) => {
+        const comments = reasonCommentsByPoint?.[`${label}|${entry.dataKey}`]
+        const hasComments = comments?.length
+        return (
+          <div key={entry.dataKey} className="mb-1">
+            <div className="flex justify-between gap-4">
+              <span>{displayLabel(entry.dataKey)}</span>
+              <span>{formatStat(Number(entry.value))}</span>
+            </div>
+            {hasComments ? (
+              <div className="mt-0.5 pl-2 text-xs text-slate-400 border-l-2 border-slate-600">
+                <span className="font-medium text-slate-500">Reason comment{comments.length > 1 ? 's' : ''}:</span>{' '}
+                {comments.length === 1 ? comments[0] : comments.join('; ')}
+              </div>
+            ) : null}
+          </div>
+        )
+      })}
       <div className="mt-1 border-t border-slate-600 pt-1 flex justify-between gap-4">
-        <span>Cumulative total</span>
+        <span>{cumulative ? 'Cumulative total' : 'Total'}</span>
         <span>{formatStat(total)}</span>
       </div>
     </div>
@@ -84,11 +103,16 @@ export default function TokensOverTimeChart({
   productDisplayNames,
   granularity,
   isPresentationMode = false,
+  cumulative = true,
+  reasonCommentsByPoint,
 }: TokensOverTimeChartProps) {
-  const cumulativeData = useMemo(() => calculateCumulativeData(data), [data])
+  const chartData = useMemo(
+    () => (cumulative ? calculateCumulativeData(data) : data),
+    [data, cumulative]
+  )
   const displayLabel = (key: string) => productDisplayNames?.get(key) ?? key
   const productKeys = new Set<string>()
-  cumulativeData.forEach((point) => {
+  chartData.forEach((point) => {
     Object.keys(point).forEach((key) => {
       if (key !== 'date' && typeof point[key] === 'number') productKeys.add(key)
     })
@@ -96,7 +120,7 @@ export default function TokensOverTimeChart({
   const sortedProducts = Array.from(productKeys).sort()
   const formatDate = (dateStr: string) => formatChartPeriodDate(dateStr, granularity)
 
-  if (sortedProducts.length === 0 || cumulativeData.length === 0) {
+  if (sortedProducts.length === 0 || chartData.length === 0) {
     return (
       <div className="h-96 flex items-center justify-center text-slate-400">
         No data available
@@ -107,7 +131,7 @@ export default function TokensOverTimeChart({
   return (
     <ResponsiveContainer width="100%" height={400}>
       <BarChart
-        data={cumulativeData}
+        data={chartData}
         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
       >
         <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
@@ -130,7 +154,9 @@ export default function TokensOverTimeChart({
             TokensOverTimeTooltipContent(
               p as { payload?: Array<{ name?: string; value?: unknown; dataKey: string }>; label?: string },
               formatDate,
-              displayLabel
+              displayLabel,
+              cumulative,
+              reasonCommentsByPoint
             )
           }
         />

@@ -111,7 +111,7 @@ export default async function KPIsPage({ params, searchParams }: KPIsPageProps) 
       <KPIStrip data={kpiData} isPresentationMode={isPresentationMode} />
 
       <div className={`mt-8 ${isPresentationMode ? 'mt-12' : ''}`}>
-        <h2 className="text-xl font-semibold text-white mb-4">Product token consumption</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">Token Consumption & User Growth by Product</h2>
         <ProductTokenTableSection
           tableData={tableData}
           productDisplayNames={productDisplayNames}

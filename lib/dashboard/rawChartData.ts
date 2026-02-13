@@ -1114,6 +1114,142 @@ export async function getDateRangeForAccount(
 }
 
 /**
+ * Get date range (min and max usage_date) from manual_adjustments_raw for an account
+ */
+export async function getDateRangeForManualAdjustments(
+  accountId: string,
+  supabase: SupabaseClient
+): Promise<{ minDate: string | null; maxDate: string | null }> {
+  const { data: minData } = await supabase
+    .from('manual_adjustments_raw')
+    .select('usage_date')
+    .eq('account_id', accountId)
+    .not('usage_date', 'is', null)
+    .order('usage_date', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+
+  const { data: maxData } = await supabase
+    .from('manual_adjustments_raw')
+    .select('usage_date')
+    .eq('account_id', accountId)
+    .not('usage_date', 'is', null)
+    .order('usage_date', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return {
+    minDate: minData?.usage_date ?? null,
+    maxDate: maxData?.usage_date ?? null,
+  }
+}
+
+export type ManualAdjustmentsChartFilters = Omit<RawChartFilters, 'source'>
+
+export type ReasonCommentsByPoint = Record<string, string[]>
+
+/**
+ * Compute period key for a usage_date given granularity (same logic as aggregateTimeSeriesData)
+ */
+function getPeriodKey(usageDate: string, granularity: TimeGranularity): string {
+  const date = new Date(usageDate)
+  switch (granularity) {
+    case 'week': {
+      const day = date.getDay()
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+      const monday = new Date(date)
+      monday.setDate(diff)
+      return monday.toISOString().split('T')[0]
+    }
+    case 'month':
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
+    case 'quarter': {
+      const quarter = Math.floor(date.getMonth() / 3)
+      return `${date.getFullYear()}-${String(quarter * 3 + 1).padStart(2, '0')}-01`
+    }
+    case 'year':
+      return `${date.getFullYear()}-01-01`
+    default:
+      return usageDate
+  }
+}
+
+/**
+ * Fetch time-series data for manual adjustments from manual_adjustments_raw
+ * Returns chart data and reason comments keyed by `${periodKey}|${productName}`
+ */
+export async function fetchManualAdjustmentsTimeSeriesData(
+  accountId: string,
+  granularity: TimeGranularity,
+  filters: ManualAdjustmentsChartFilters,
+  supabase: SupabaseClient
+): Promise<{ chartData: ChartDataPoint[]; reasonCommentsByPoint: ReasonCommentsByPoint }> {
+  const buildQuery = () => {
+    let query = supabase
+      .from('manual_adjustments_raw')
+      .select('usage_date, product_name, tokens_consumed, reason_comment', { count: 'exact' })
+      .eq('account_id', accountId)
+      .not('tokens_consumed', 'is', null)
+      .order('usage_date', { ascending: true })
+    if (filters.startDate) {
+      query = query.gte('usage_date', filters.startDate)
+    }
+    if (filters.endDate) {
+      query = query.lte('usage_date', filters.endDate)
+    }
+    if (filters.productNames.length > 0) {
+      query = query.in('product_name', filters.productNames)
+    }
+    return query
+  }
+
+  type Row = {
+    usage_date: string
+    product_name: string
+    tokens_consumed: number | null
+    reason_comment: string | null
+  }
+  const allData = await fetchAllRows<Row>(supabase, 'manual_adjustments_raw', buildQuery)
+
+  const grouped = new Map<string, Map<string, number>>()
+  const reasonCommentsByPoint: ReasonCommentsByPoint = {}
+
+  allData.forEach((row) => {
+    if (!row.usage_date) return
+    const periodKey = getPeriodKey(row.usage_date, granularity)
+    const productName = row.product_name || 'unknown'
+
+    if (!grouped.has(periodKey)) {
+      grouped.set(periodKey, new Map())
+    }
+    const periodData = grouped.get(periodKey)!
+    const currentValue = periodData.get(productName) || 0
+    const metricValue = Number(row.tokens_consumed) || 0
+    periodData.set(productName, currentValue + metricValue)
+
+    const comment = row.reason_comment?.trim()
+    if (comment) {
+      const key = `${periodKey}|${productName}`
+      if (!reasonCommentsByPoint[key]) reasonCommentsByPoint[key] = []
+      reasonCommentsByPoint[key].push(comment)
+    }
+  })
+
+  const chartData: ChartDataPoint[] = []
+  const sortedPeriods = Array.from(grouped.keys()).sort()
+  sortedPeriods.forEach((period) => {
+    const periodData = grouped.get(period)!
+    const dataPoint: ChartDataPoint = { date: period }
+    periodData.forEach((value, productName) => {
+      dataPoint[productName] = value
+    })
+    chartData.push(dataPoint)
+  })
+
+  return { chartData, reasonCommentsByPoint }
+}
+
+/**
  * Get date range (min and max dates) from desktop table for hours data
  * Hours data only exists in daily_user_desktop_raw, not in cloud
  * Only considers rows with usage_hours IS NOT NULL

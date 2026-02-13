@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChartDataPoint } from '@/lib/dashboard/chartData'
 import { TimeGranularity } from '@/lib/dashboard/chartData'
 import { createClient } from '@/lib/supabase/client'
 import { getDateRangeForAccount } from '@/lib/dashboard/rawChartData'
 import { aggregateChartDataByTag } from '@/lib/dashboard/productDisplay'
-import ChartContainer from './ChartContainer'
+import ChartContainer, { ChartCopyButton } from './ChartContainer'
 import ChartFilters, { SourceFilter } from './ChartFilters'
 import StackedBarChart from './StackedBarChart'
 import { chartTitleContent } from './ChartTitleContent'
@@ -195,6 +195,8 @@ export default function UsersByProductChart({
       })
     : 'Users by Product'
 
+  const chartRef = useRef<HTMLDivElement>(null)
+
   const filtersBlock = !isPresentationMode && (
     <ChartFilters
       availableProducts={availableProducts}
@@ -211,6 +213,7 @@ export default function UsersByProductChart({
         setEndDate(end)
       }}
       productDisplayNames={chartDisplayNames}
+      rightContent={<ChartCopyButton chartRef={chartRef} />}
     />
   )
 
@@ -218,7 +221,7 @@ export default function UsersByProductChart({
     return (
       <>
         {filtersBlock}
-        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             Loading users data...
           </div>
@@ -231,7 +234,7 @@ export default function UsersByProductChart({
     return (
       <>
         {filtersBlock}
-        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             No users data available
           </div>
@@ -243,7 +246,7 @@ export default function UsersByProductChart({
   return (
     <>
       {filtersBlock}
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+      <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <StackedBarChart
           data={chartData}
           productColors={chartColors}

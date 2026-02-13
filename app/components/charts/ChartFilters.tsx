@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
 import DateRangePicker from './DateRangePicker'
 
 export type SourceFilter = 'all' | 'desktop' | 'cloud'
@@ -18,6 +18,7 @@ interface ChartFiltersProps {
   onDateRangeApply: (startDate: string | null, endDate: string | null) => void
   showSourceFilter?: boolean
   productDisplayNames?: Map<string, string>
+  rightContent?: ReactNode
 }
 
 export default function ChartFilters({
@@ -33,6 +34,7 @@ export default function ChartFilters({
   onDateRangeApply,
   showSourceFilter = true,
   productDisplayNames,
+  rightContent,
 }: ChartFiltersProps) {
   const [isProductDropdownOpen, setIsProductDropdownOpen] = useState(false)
   const displayLabel = (key: string) => productDisplayNames?.get(key) ?? key
@@ -57,7 +59,8 @@ export default function ChartFilters({
   const someSelected = selectedProducts.length > 0 && selectedProducts.length < availableProducts.length
 
   return (
-    <div className="flex flex-wrap gap-4 mb-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
+    <div className="flex flex-wrap items-center justify-between gap-4 mb-4 p-4 bg-slate-900 rounded-lg border border-slate-700">
+      <div className="flex flex-wrap gap-4">
       {/* Date Range Filter */}
       <DateRangePicker
         startDate={startDate}
@@ -185,6 +188,8 @@ export default function ChartFilters({
           </span>
         )}
       </div>
+      </div>
+      {rightContent != null && <div className="ml-auto">{rightContent}</div>}
     </div>
   )
 }

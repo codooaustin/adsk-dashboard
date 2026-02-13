@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
+import { getCurrentFiscalYear } from '@/lib/utils/fiscalYear'
 
 interface OverallQuotaAttainmentData {
   fiscal_year: number
@@ -11,20 +12,32 @@ interface OverallQuotaAttainmentData {
 }
 
 export default function OverallQuotaAttainmentSummary() {
+  const currentFy = getCurrentFiscalYear()
+  const [fiscalYear, setFiscalYear] = useState<number>(currentFy)
   const [data, setData] = useState<OverallQuotaAttainmentData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const fiscalYearOptions = useMemo(() => {
+    const opts: { value: number; label: string }[] = []
+    for (let fy = currentFy; fy >= currentFy - 4; fy--) {
+      opts.push({ value: fy, label: `FY ${fy}` })
+    }
+    return opts
+  }, [currentFy])
+
   useEffect(() => {
     fetchOverallQuotaAttainment()
-  }, [])
+  }, [fiscalYear])
 
   const fetchOverallQuotaAttainment = async () => {
     setIsLoading(true)
     setError(null)
 
     try {
-      const response = await fetch('/api/quota-attainment/overall')
+      const response = await fetch(
+        `/api/quota-attainment/overall?fiscal_year=${fiscalYear}`
+      )
       if (!response.ok) {
         throw new Error('Failed to fetch overall quota attainment')
       }
@@ -108,21 +121,37 @@ export default function OverallQuotaAttainmentSummary() {
             </p>
           )}
         </div>
-        {data.attainment_percentage !== null && (
-          <div
-            className={`px-3 py-1 rounded text-sm font-medium ${
-              data.attainment_percentage >= 100
-                ? 'bg-green-900/30 text-green-400'
-                : data.attainment_percentage >= 75
-                ? 'bg-hello-yellow/20 text-hello-yellow'
-                : data.attainment_percentage >= 50
-                ? 'bg-yellow-900/30 text-yellow-400'
-                : 'bg-red-900/30 text-red-400'
-            }`}
-          >
-            {getStatusText(data.attainment_percentage)}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-slate-400">Fiscal year</label>
+            <select
+              value={fiscalYear}
+              onChange={(e) => setFiscalYear(parseInt(e.target.value, 10))}
+              className="rounded border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white focus:border-hello-yellow focus:outline-none focus:ring-1 focus:ring-hello-yellow"
+            >
+              {fiscalYearOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </div>
-        )}
+          {data.attainment_percentage !== null && (
+            <div
+              className={`px-3 py-1 rounded text-sm font-medium ${
+                data.attainment_percentage >= 100
+                  ? 'bg-green-900/30 text-green-400'
+                  : data.attainment_percentage >= 75
+                  ? 'bg-hello-yellow/20 text-hello-yellow'
+                  : data.attainment_percentage >= 50
+                  ? 'bg-yellow-900/30 text-yellow-400'
+                  : 'bg-red-900/30 text-red-400'
+              }`}
+            >
+              {getStatusText(data.attainment_percentage)}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="space-y-3">

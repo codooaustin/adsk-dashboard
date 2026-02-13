@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChartDataPoint } from '@/lib/dashboard/chartData'
 import { TimeGranularity } from '@/lib/dashboard/chartData'
 import { createClient } from '@/lib/supabase/client'
 import { getDateRangeForHours } from '@/lib/dashboard/rawChartData'
 import { aggregateChartDataByTag } from '@/lib/dashboard/productDisplay'
-import ChartContainer from './ChartContainer'
+import ChartContainer, { ChartCopyButton } from './ChartContainer'
 import ChartFilters from './ChartFilters'
 import StackedBarChart from './StackedBarChart'
 import { chartTitleContent } from './ChartTitleContent'
@@ -229,6 +229,8 @@ export default function HoursByProductChart({
       })
     : 'Hours by Product'
 
+  const chartRef = useRef<HTMLDivElement>(null)
+
   const filtersBlock = !isPresentationMode && (
     <ChartFilters
       availableProducts={availableProducts}
@@ -246,6 +248,7 @@ export default function HoursByProductChart({
       }}
       showSourceFilter={false}
       productDisplayNames={chartDisplayNames}
+      rightContent={<ChartCopyButton chartRef={chartRef} />}
     />
   )
 
@@ -253,7 +256,7 @@ export default function HoursByProductChart({
     return (
       <>
         {filtersBlock}
-        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             Loading hours data...
           </div>
@@ -266,7 +269,7 @@ export default function HoursByProductChart({
     return (
       <>
         {filtersBlock}
-        <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+        <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
           <div className="h-96 flex items-center justify-center text-slate-400">
             No hours data available
           </div>
@@ -278,7 +281,7 @@ export default function HoursByProductChart({
   return (
     <>
       {filtersBlock}
-      <ChartContainer title={title} isPresentationMode={isPresentationMode}>
+      <ChartContainer ref={chartRef} title={title} isPresentationMode={isPresentationMode}>
         <StackedBarChart
         data={chartData}
         productColors={chartColors}
